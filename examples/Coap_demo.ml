@@ -41,7 +41,15 @@ let main =
   let* () = recode msg2_data in
   let* () = recode msg4_data in
 
-  Coap.Server.start ()
+  let () = Coap.Server.start begin function
+    | Ok req ->
+      let token = Coap.Message.token req in
+      Coap.Message.make ~code:(Response `Content) ~token "Hello, world!"
+    | Error e ->
+      Format.eprintf "[ERROR] %a@." Coap.pp_error e;
+      Coap.Message.make ~code:(Response `Internal_server_error) "Oh no!"
+  end in
+  Ok ()
 
 
 let () = run main

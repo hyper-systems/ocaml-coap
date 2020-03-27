@@ -1,44 +1,4 @@
 
-module Request : sig
-  type kind = [
-    | `Get
-    | `Post
-    | `Put
-    | `Delete
-  ]
-end
-
-module Response : sig
-  type kind = [
-    (* 2XX *)
-    | `Created
-    | `Deleted
-    | `Valid
-    | `Changed
-    | `Content
-
-    (* 4XX *)
-    | `Bad_request
-    | `Unauthorized
-    | `Bad_option
-    | `Forbidden
-    | `Not_found
-    | `Method_not_allowed
-    | `Not_acceptable
-    | `Precondition_failed
-    | `Request_entity_too_large
-    | `Unsupported_content_format
-
-    (* 5xx *)
-    | `Internal_server_error
-    | `Not_implemented
-    | `Bad_gateway
-    | `Service_unavailable
-    | `Gateway_timeout
-    | `Proxying_not_supported
-  ]
-end
-
 
 type error = [
   | `Invalid_token_length
@@ -60,9 +20,42 @@ module Message : sig
 
   type code =
     | Empty
-    | Request of Request.kind
-    | Response of Response.kind
-    | Reserved
+    | Request of [
+      | `Get
+      | `Post
+      | `Put
+      | `Delete
+    ]
+    | Response of [
+      (* 2XX *)
+      | `Created
+      | `Deleted
+      | `Valid
+      | `Changed
+      | `Content
+
+      (* 4XX *)
+      | `Bad_request
+      | `Unauthorized
+      | `Bad_option
+      | `Forbidden
+      | `Not_found
+      | `Method_not_allowed
+      | `Not_acceptable
+      | `Precondition_failed
+      | `Request_entity_too_large
+      | `Unsupported_content_format
+
+      (* 5xx *)
+      | `Internal_server_error
+      | `Not_implemented
+      | `Bad_gateway
+      | `Service_unavailable
+      | `Gateway_timeout
+      | `Proxying_not_supported
+    ]
+
+  val pp_code : Format.formatter -> code -> unit
 
   type content_format = [
     | `Text of [ `Plain ]
@@ -118,16 +111,19 @@ module Message : sig
 
   val options : t -> option list
 
+  val path : t -> string list
+  (** Extract request path from message options. *)
+
   val payload : t -> string
 
   val is_confirmable : t -> bool
 
   val decode : string -> (t, error) result
-  [@@@ocaml.alert info "unimplemented"]
 
   val encode : t -> string
 
   val pp : Format.formatter -> t -> unit
+
 
   val max_size : int
   (** Maximum safe message size.
@@ -136,7 +132,36 @@ module Message : sig
 end
 
 
+module Request : sig
+
+end
+
+module Response : sig
+  val not_found
+     : ?version:int
+    -> ?id:int
+    -> ?token:string
+    -> ?kind:Message.kind
+    -> ?options:Message.option list
+    -> string
+    -> Message.t
+
+  val content
+     : ?version:int
+    -> ?id:int
+    -> ?token:string
+    -> ?kind:Message.kind
+    -> ?options:Message.option list
+    -> string
+    -> Message.t
+end
+
+
 module Server : sig
-  val start : unit -> (unit, error) result
+  val start
+     : ?host:string
+    -> ?port:int
+    -> ((Message.t, error) result -> Message.t)
+    -> unit
 end
 

@@ -19,9 +19,10 @@ let print ?(channel=stdout) fmt =
   let f = Format.formatter_of_out_channel channel in
   Format.(kfprintf (fun f -> pp_print_newline f ()) f fmt)
 
-let debug fmt = print ~channel:stderr ("[DEBUG] " ^^ fmt)
-let error fmt = print ~channel:stderr ("[ERROR] " ^^ fmt)
-let info  fmt = print ~channel:stderr ("[INFO] " ^^ fmt)
+let debug   fmt = print ~channel:stderr ("[DEBUG] " ^^ fmt)
+let error   fmt = print ~channel:stderr ("[ERROR] " ^^ fmt)
+let info    fmt = print ~channel:stderr ("[INFO] " ^^ fmt)
+let warning fmt = print ~channel:stderr ("[WARNING] " ^^ fmt)
 
 let int_to_bin_byte d =
   if d < 0 then invalid_arg "bin_of_int" else

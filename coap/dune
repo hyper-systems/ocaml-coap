@@ -8,7 +8,7 @@
     Coap_request
     Coap_response
     Coap_server
-    Local)
+    Coap_base)
   (libraries unix stdint fmt cstruct))
 
 

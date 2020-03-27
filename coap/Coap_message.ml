@@ -1,5 +1,4 @@
-open Stdint
-open Local
+open Coap_base
 
 (* Message kind *)
 
@@ -37,16 +36,85 @@ let kind_to_int k =
 
 type code =
   | Empty
-  | Request of Coap_request.kind
-  | Response of Coap_response.kind
-  | Reserved
+  | Request of [
+    | `Get
+    | `Post
+    | `Put
+    | `Delete
+  ]
+  | Response of [
+    (* 2XX *)
+    | `Created
+    | `Deleted
+    | `Valid
+    | `Changed
+    | `Content
+
+    (* 4XX *)
+    | `Bad_request
+    | `Unauthorized
+    | `Bad_option
+    | `Forbidden
+    | `Not_found
+    | `Method_not_allowed
+    | `Not_acceptable
+    | `Precondition_failed
+    | `Request_entity_too_large
+    | `Unsupported_content_format
+
+    (* 5xx *)
+    | `Internal_server_error
+    | `Not_implemented
+    | `Bad_gateway
+    | `Service_unavailable
+    | `Gateway_timeout
+    | `Proxying_not_supported
+  ]
+
+
+let dump_request_kind f k =
+  let p = Format.fprintf f in
+  match k with
+  | `Get -> p "`Get"
+  | `Post -> p "`Post"
+  | `Put -> p "`Put"
+  | `Delete -> p "`Delete"
+
+
+let dump_response_kind f k =
+  let p = Format.fprintf f in
+  match k with
+  | `Created -> p "`Created"
+  | `Deleted -> p "`Deleted"
+  | `Valid -> p "`Valid"
+  | `Changed -> p "`Changed"
+  | `Content -> p "`Content"
+  | `Continue -> p "`Continue"
+  | `Bad_request -> p "`Bad_request"
+  | `Unauthorized -> p "`Unauthorized"
+  | `Bad_option -> p "`Bad_option"
+  | `Forbidden -> p "`Forbidden"
+  | `Not_found -> p "`Not_found"
+  | `Method_not_allowed -> p "`Method_not_allowed"
+  | `Not_acceptable -> p "`Not_acceptable"
+  | `Precondition_failed -> p "`Precondition_failed"
+  | `Request_entity_too_large -> p "`Request_entity_too_large"
+  | `Unsupported_content_format -> p "`Unsupported_content_format"
+  | `Request_entity_incomplete -> p "`Request_entity_incomplete"
+  | `Too_many_requests -> p "`Too_many_requests"
+  | `Internal_server_error -> p "`Internal_server_error"
+  | `Not_implemented -> p "`Not_implemented"
+  | `Bad_gateway -> p "`Bad_gateway"
+  | `Service_unavailable -> p "`Service_unavailable"
+  | `Gateway_timeout -> p "`Gateway_timeout"
+  | `Proxying_not_supported -> p "`Proxying_not_supported"
+
 
 let pp_code f x =
   match x with
   | Empty -> Format.fprintf f "Empty"
-  | Request x -> Format.fprintf f "Request %a" Coap_request.dump_kind x
-  | Response x -> Format.fprintf f "Response %a" Coap_response.dump_kind x
-  | Reserved -> Format.fprintf f "Reserved"
+  | Request x -> Format.fprintf f "Request %a" dump_request_kind x
+  | Response x -> Format.fprintf f "Response %a" dump_response_kind x
 
 
 (* Message content format *)
@@ -66,7 +134,7 @@ type content_format = [
 (* Message header *)
 
 module Header = struct
-  type t = Uint32.t
+  type t = int32
 
   let make ~version ~id ~token_length ~kind ~code =
     let self = version lsl 30 in
@@ -83,7 +151,6 @@ module Header = struct
       | Request `Post -> encode_code 0 02
       | Request `Put -> encode_code 0 03
       | Request `Delete -> encode_code 0 04
-      | Reserved -> encode_code 1 00
       | Response `Created -> encode_code 2 01
       | Response `Deleted -> encode_code 2 02
       | Response `Valid -> encode_code 2 03
@@ -106,33 +173,33 @@ module Header = struct
       | Response `Gateway_timeout -> encode_code 5 04
       | Response `Proxying_not_supported -> encode_code 5 05 in
     let self = self + id in
-    Uint32.of_int self
+    Int32.of_int self
 
   let version self =
-    Uint32.shift_right_logical self 30
-    |> Uint32.to_int
+    Int32.shift_right_logical self 30
+    |> Int32.to_int
 
   let kind self =
     let mask, shift = 0b00110000000000000000000000000000, 28 in
-    Uint32.(shift_right_logical (logand self (of_int mask))) shift
-    |> Uint32.to_int
+    Int32.(shift_right_logical (logand self (of_int mask))) shift
+    |> Int32.to_int
     |> kind_of_int
 
   let token_length self =
     let mask, shift = 0b00001111000000000000000000000000, 24 in
-    Uint32.(shift_right_logical (logand self (of_int mask))) shift
-    |> Uint32.to_int
+    Int32.(shift_right_logical (logand self (of_int mask))) shift
+    |> Int32.to_int
 
   let code self =
     let mask, shift = 0b00000000111000000000000000000000, 21 in
-    let mask = Uint32.of_int mask in
-    let code = Uint32.(shift_right_logical (logand self mask)) shift in
-    let code = Uint32.to_int code in
+    let mask = Int32.of_int mask in
+    let code = Int32.(shift_right_logical (logand self mask)) shift in
+    let code = Int32.to_int code in
 
     let mask, shift = 0b00000000000111110000000000000000, 16 in
-    let mask = Uint32.of_int mask in
-    let data = Uint32.(shift_right_logical (logand self mask)) shift in
-    let data = Uint32.to_int data in
+    let mask = Int32.of_int mask in
+    let data = Int32.(shift_right_logical (logand self mask)) shift in
+    let data = Int32.to_int data in
     match code, data with
     | 0, 00 -> Empty
     | 0, 01 -> Request `Get
@@ -140,7 +207,7 @@ module Header = struct
     | 0, 03 -> Request `Put
     | 0, 04 -> Request `Delete
 
-    | (1|3), _ -> Reserved
+    | (1|3), _ -> failwith "Reserved"
 
     | 2, 01 -> Response `Created
     | 2, 02 -> Response `Deleted
@@ -171,8 +238,8 @@ module Header = struct
 
   let id self =
     let mask = 0b00000000000000001111111111111111 in
-    Uint32.(logand self (of_int mask))
-    |> Uint32.to_int
+    Int32.(logand self (of_int mask))
+    |> Int32.to_int
 
   let pp f self =
     Format.fprintf f
@@ -416,14 +483,16 @@ end
 
 
 type t = {
-  header : Uint32.t;
+  header : Int32.t;
   token : string;
   options : option list;
   payload : string;
 }
 
 let pp_options =
-  Fmt.list ~sep:Fmt.sp Option.pp
+  Format.pp_print_list
+    ~pp_sep:Format.pp_print_space
+    Option.pp
 
 let version self =
   Header.version self.header
@@ -446,6 +515,12 @@ let options self =
 let payload self =
   self.payload
 
+
+let path self =
+  List.fold_left
+    (fun r opt -> match opt with Uri_path x -> x :: r | _ -> r)
+    [] self.options
+  |> List.rev
 
 let payload_marker = 0xFF
 let header_length = 4
@@ -476,7 +551,6 @@ let length self =
 let decode data =
   let data = Cstruct.of_string data in
   let header = Cstruct.BE.get_uint32 data 0 in
-  let header = Uint32.of_int32 header in
 
   let token_length = Header.token_length header in
   if token_length > 8 then Error `Invalid_token_length else
@@ -516,7 +590,7 @@ let decode data =
 (* Message encoding *)
 
 let encode_header data i header =
-  Cstruct.BE.set_uint32 data i (Uint32.to_int32 header);
+  Cstruct.BE.set_uint32 data i header;
   i + header_length
 
 
@@ -597,6 +671,7 @@ let make
   let token_length = String.length token in
   let header = Header.make ~version ~id ~token_length ~kind ~code in
   { header; token; options; payload }
+
 
 
 let pp f self =
