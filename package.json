@@ -8,7 +8,7 @@
     "buildDev": "dune build --promote-install-files --root . --only-package #{self.name}"
   },
   "scripts": {
-    "doc": "esy dune build @doc"
+    "docs": "bash -c 'dune build @doc && cp -r \"#{self.target_dir}/default/_doc/_html\" docs'"
   },
   "dependencies": {
     "@opam/fmt": "*",
