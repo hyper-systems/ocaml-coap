@@ -5,7 +5,7 @@
   "license": "MIT",
   "esy": {
     "build": "dune build -p #{self.name}",
-    "buildDev": "dune build --promote-install-files --root . --only-package #{self.name}"
+    "buildDev": "dune build --root . --only-package #{self.name}"
   },
   "scripts": {
     "docs": "bash -c 'dune build @doc && rm -rf ./docs && cp -r \"#{self.target_dir}/default/_doc/_html\" docs'"
@@ -16,9 +16,9 @@
     "@opam/stdint": "*"
   },
   "devDependencies": {
-    "@opam/dune": "*",
+    "@opam/dune": "~1.11.4",
     "@opam/merlin": "*",
-    "ocaml": "~4.9.0",
+    "ocaml": "^4.6.1000",
     "@opam/odoc": "*"
   }
 }

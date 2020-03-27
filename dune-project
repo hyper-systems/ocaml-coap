@@ -1,2 +1,2 @@
-(lang dune 2.4)
+(lang dune 1.11)
 (name coap)
