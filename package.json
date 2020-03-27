@@ -1,0 +1,24 @@
+{
+  "name": "coap",
+  "version": "0.1.0",
+  "description": "Constrained Application Protocol (RFC 7252) implementation for OCaml and Reason.",
+  "license": "MIT",
+  "esy": {
+    "build": "dune build -p #{self.name}",
+    "buildDev": "dune build --promote-install-files --root . --only-package #{self.name}"
+  },
+  "scripts": {
+    "doc": "esy dune build @doc"
+  },
+  "dependencies": {
+    "@opam/fmt": "*",
+    "@opam/cstruct": "*",
+    "@opam/stdint": "*"
+  },
+  "devDependencies": {
+    "@opam/dune": "*",
+    "@opam/merlin": "*",
+    "ocaml": "~4.9.0",
+    "@opam/odoc": "*"
+  }
+}

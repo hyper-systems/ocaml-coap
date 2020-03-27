@@ -1,0 +1,6 @@
+
+(executable
+  (name Coap_demo)
+  (modules Coap_demo)
+  (libraries coap fmt))
+

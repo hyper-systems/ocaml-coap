@@ -1,0 +1,14 @@
+
+(library
+  (name Coap)
+  (public_name coap)
+  (modules
+    Coap
+    Coap_message
+    Coap_request
+    Coap_response
+    Coap_server
+    Local)
+  (libraries unix stdint fmt cstruct))
+
+
