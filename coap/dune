@@ -9,6 +9,7 @@
     Coap_response
     Coap_server
     Coap_base)
-  (libraries unix stdint fmt cstruct))
+  (libraries unix stdint fmt cstruct)
+  (preprocess future_syntax))
 
 

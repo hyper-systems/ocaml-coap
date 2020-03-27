@@ -2,5 +2,6 @@
 (executable
   (name Coap_demo)
   (modules Coap_demo)
-  (libraries coap fmt))
+  (libraries coap fmt)
+  (preprocess future_syntax))
 
