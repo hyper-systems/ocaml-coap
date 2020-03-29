@@ -1,0 +1,6 @@
+
+(library
+  (name Coap)
+  (public_name coap)
+  (libraries coap-core coap-server-unix))
+
