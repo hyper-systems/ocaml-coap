@@ -159,7 +159,7 @@ end
 module Server : sig
   val start
     : ?host:string -> ?port:int
-    -> ((Coap_core.Message.t, Coap_core.error) result -> Coap_core.Message.t Lwt.t)
+    -> ((Message.t, error) result -> Message.t Lwt.t)
     -> 'a Lwt.t
 end
 
