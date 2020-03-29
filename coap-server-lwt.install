@@ -1,0 +1,15 @@
+lib: [
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.a"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cma"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmi"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmt"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmti"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmx"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmxa"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.cmxs"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.ml"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/Coap_server_lwt.mli"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/META"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/dune-package"
+  "/Users/rizo/Areas/Hyper/Code/ocaml-coap/_esy/default/store/b/coap-2cda7549/install/default/lib/coap-server-lwt/opam"
+]

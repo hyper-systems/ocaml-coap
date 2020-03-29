@@ -1,0 +1,9 @@
+
+(library
+  (name Coap_server_lwt)
+  (public_name coap-server-lwt)
+  (modules
+    Coap_server_lwt)
+  (libraries coap-core lwt.unix)
+  (preprocess future_syntax))
+

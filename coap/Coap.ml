@@ -6,5 +6,5 @@ module Request = Coap_core.Request
 module Response = Coap_core.Response
 module Message = Coap_core.Message
 
-module Server = Coap_server_unix
+module Server = Coap_server_lwt
 

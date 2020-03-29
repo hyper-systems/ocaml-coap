@@ -16,7 +16,8 @@
   "dependencies": {
     "@opam/fmt": "*",
     "@opam/cstruct": "*",
-    "@opam/stdint": "*"
+    "@opam/stdint": "*",
+    "@opam/lwt": "*"
   },
   "devDependencies": {
     "@opam/dune": "~1.11.4",
