@@ -4,8 +4,11 @@
   "description": "Constrained Application Protocol (RFC 7252) implementation for OCaml and Reason.",
   "license": "MIT",
   "esy": {
-    "build": "dune build --profile=release",
-    "buildDev": "dune build --profile=dev"
+    "build": "dune build --root=. --profile=release",
+    "buildDev": "dune build --root=. --profile=dev",
+    "install": [
+      "dune install --prefix=#{self.install}"
+    ]
   },
   "scripts": {
     "docs": "bash -c 'dune build @doc && rm -rf ./docs && cp -r \"#{self.target_dir}/default/_doc/_html\" docs'"
