@@ -10,7 +10,7 @@ let run x =
   match x with
   | Ok () -> ()
   | Error err ->
-    Fmt.epr "[ERROR] %a@." Coap.pp_error err;
+    Fmt.epr "[ERROR] %a@." Coap_core.pp_error err;
     exit 1
 
 
@@ -24,9 +24,9 @@ let msg4_data = "\x44\x02\xd9\xb9\x74\x6f\x6b\x31\x31\x48\x43\xa9\x8a\xc7\x71\x4
 
 
 let recode expected =
-  let* msg = Coap.Message.decode expected in
-  Format.printf "recode: msg=%a@." Coap.Message.pp msg;
-  let actual = Coap.Message.encode msg in
+  let* msg = Coap_core.Message.decode expected in
+  Format.printf "recode: msg=%a@." Coap_core.Message.pp msg;
+  let actual = Coap_core.Message.encode msg in
   if not (String.equal expected actual) then begin
     let expected = Cstruct.of_string expected in
     let actual = Cstruct.of_string actual in
@@ -36,22 +36,23 @@ let recode expected =
   end else Ok ()
 
 
-let main =
+let test_message_encoder () = run begin
   let* () = recode msg1_data in
   let* () = recode msg2_data in
   let* () = recode msg4_data in
+  Ok ()
+end
 
-  let () = Coap.Server.start begin function
+
+let () = run begin
+  let () = Coap_server_unix.start begin function
     | Ok req ->
-      let token = Coap.Message.token req in
-      Coap.Message.make ~code:(Response `Content) ~token "Hello, world!"
+      let token = Coap_core.Message.token req in
+      Coap_core.Message.make ~code:(Response `Content) ~token "Hello, world!"
     | Error e ->
-      Format.eprintf "[ERROR] %a@." Coap.pp_error e;
-      Coap.Message.make ~code:(Response `Internal_server_error) "Oh no!"
+      Format.eprintf "[ERROR] %a@." Coap_core.pp_error e;
+      Coap_core.Message.make ~code:(Response `Internal_server_error) "Oh no!"
   end in
   Ok ()
-
-
-let () = run main
-
+end
 

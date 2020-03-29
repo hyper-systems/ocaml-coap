@@ -1,0 +1,10 @@
+
+
+
+(library
+  (name Coap_server_unix)
+  (public_name coap-server-unix)
+  (modules
+    Coap_server_unix)
+  (libraries coap-core unix)
+  (preprocess future_syntax))

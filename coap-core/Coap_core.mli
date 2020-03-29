@@ -156,12 +156,3 @@ module Response : sig
     -> Message.t
 end
 
-
-module Server : sig
-  val start
-     : ?host:string
-    -> ?port:int
-    -> ((Message.t, error) result -> Message.t)
-    -> unit
-end
-

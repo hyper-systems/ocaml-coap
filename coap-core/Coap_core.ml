@@ -18,5 +18,4 @@ let pp_error formatter x =
 module Request = Coap_request
 module Response = Coap_response
 module Message = Coap_message
-module Server = Coap_server
 

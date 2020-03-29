@@ -1,4 +1,11 @@
-open Coap_base
+
+let (let*) res f =
+  match res with
+  | Ok x -> f x
+  | Error e -> Error e
+
+let return x = Ok x
+
 
 (* Message kind *)
 
@@ -474,11 +481,6 @@ module Option = struct
     | Proxy_scheme x -> p "@[(Proxy_scheme %S)@]" x
     | Size1 x -> p "@[(Size1 %d)@]" x
 
-
-  let debug ~byte0 ~number ~length ~value =
-    let value = Cstruct.of_string value in
-    debug "number=%02d byte0:hex=%02x length=%02d value=<%a> name=%s"
-      number byte0 length Cstruct.hexdump_pp value (name number)
 end
 
 
@@ -647,7 +649,7 @@ let encode_options data i options =
 let encode_payload data i payload =
   let payload_length = String.length payload in
   if payload_length > 0 then begin
-    Cstruct.set_char data i (byte payload_marker);
+    Cstruct.set_char data i (Char.chr payload_marker);
     let i = i + 1 in
     Cstruct.blit_from_string payload 0 data i payload_length;
     i + payload_length
@@ -662,6 +664,15 @@ let encode self =
   let i = encode_options data i self.options in
   let _ = encode_payload data i self.payload in
   Cstruct.to_string data
+
+
+
+let gen_id =
+  let n = ref 0 in fun () -> begin
+    incr n;
+    if !n >= 0xFFFF then n := 0;
+    !n
+  end
 
 
 let make
