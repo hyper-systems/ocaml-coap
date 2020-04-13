@@ -65,6 +65,7 @@ module Message : sig
         | `Octet_stream
         | `Exi
         | `Json
+        | `Cbor
       ]
   ]
 

@@ -1,4 +1,5 @@
 
+
 let (let*) res f =
   match res with
   | Ok x -> f x
@@ -134,6 +135,7 @@ type content_format = [
     | `Octet_stream
     | `Exi
     | `Json
+    | `Cbor
   ]
 ]
 
@@ -291,7 +293,9 @@ module Option = struct
     | 42 -> `Application `Octet_stream
     | 47 -> `Application `Exi
     | 50 -> `Application `Json
-    | _ -> invalid_arg "Unknown content format"
+    (* https://tools.ietf.org/html/rfc7049#section-7.4 *)
+    | 60 -> `Application `Cbor
+    | _ -> invalid_arg ("Unsupported content format" ^ string_of_int n)
 
   let content_format_to_int n =
     match n with
@@ -301,6 +305,8 @@ module Option = struct
     | `Application `Octet_stream -> 42
     | `Application `Exi -> 47
     | `Application `Json -> 50
+    (* https://tools.ietf.org/html/rfc7049#section-7.4 *)
+    | `Application `Cbor -> 60
 
   let decode_int value length =
     (* debug "(decode_int (value:str %S) (value:hex %a) (length %d))" *)
