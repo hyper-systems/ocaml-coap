@@ -20,9 +20,13 @@
     "@opam/lwt": "*"
   },
   "devDependencies": {
-    "@opam/dune": "~1.11.4",
+    "@opam/dune": "*",
     "@opam/merlin": "*",
     "ocaml": "^4.6.1000",
-    "@opam/odoc": "*"
+    "@opam/odoc": "*",
+    "@opam/ocaml-lsp-server": "*"
+  },
+  "resolutions": {
+    "@opam/ocaml-lsp-server": "github:ocaml/ocaml-lsp:ocaml-lsp-server.opam#ed4f500"
   }
 }
