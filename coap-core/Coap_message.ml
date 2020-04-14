@@ -585,8 +585,13 @@ let decode data =
         | other -> Ok (other, i) in
       let value = Cstruct.sub data i length in
       let i = i + length in
-      let option = Option.decode number value length in
-      decode_options i number (option :: options)
+      try
+        let option = Option.decode number value length in
+        decode_options i number (option :: options)
+      with exn ->
+        Format.eprintf "[ERROR] Coap_message: exn = %s@." (Printexc.to_string exn);
+        Format.eprintf "[ERROR] Coap_message: Ignoring invalid CoAP option %d...@." number;
+        decode_options i number options
     in
     let* options, i = decode_options (4 + token_length) 0 [] in
     let payload = Cstruct.sub data i (Cstruct.len data - i) in

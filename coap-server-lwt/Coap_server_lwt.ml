@@ -37,7 +37,7 @@ let start ?(host="127.0.0.1") ?(port=5683) handler =
       let* res_len_sent =
         Lwt_unix.sendto sock res 0 res_len [] client_sockaddr in
       if res_len_sent <> res_len then
-        log "[] Could not send response message@.";
+        log "[ERROR] Could not send response message@.";
       loop ()
     | _ -> assert false
   in
