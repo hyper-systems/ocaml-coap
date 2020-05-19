@@ -20,7 +20,9 @@ build: [
   ]
 ]
 depends: [
-  "ocaml"
+  "coap-core" {=version}
+  "coap-server-lwt" {=version}
+  "ocaml" {>= "4.04.1"}
   "dune" {build}
   "odoc" {with-doc}
   "fmt"

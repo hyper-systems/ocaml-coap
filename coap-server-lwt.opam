@@ -1,0 +1,31 @@
+opam-version: "2.0"
+maintainer: "Rizo I <rizo@hypercollective.com>"
+authors: "Rizo I <rizo@hypercollective.com>"
+homepage: "https://github.com/hypercollective/ocaml-coap"
+bug-reports: "https://github.com/hypercollective/ocaml-coap/issues"
+license: "PROP"
+dev-repo: "git+https://github.com/hypercollective/ocaml-coap.git"
+synopsis: "OCaml CoAP"
+description: "OCaml CoAP"
+build: [
+  [
+    "dune"
+    "build"
+    "-p"
+    name
+    "-j"
+    jobs
+    "@install"
+    "@doc" {with-doc}
+  ]
+]
+depends: [
+  "coap-core" {=version}
+  "ocaml" {>= "4.04.1"}
+  "dune" {build}
+  "odoc" {with-doc}
+  "fmt"
+  "cstruct"
+  "stdint"
+  "lwt"
+]
