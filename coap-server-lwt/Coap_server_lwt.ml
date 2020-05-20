@@ -10,9 +10,11 @@ let log ?(channel=stdout) fmt =
 let max_coap_message_size = 1152
 
 let sock =
+  let proto = try Unix.getprotobyname "udp" with Not_found ->
+    failwith "Could not find the `udp` protocol entry. Check your /etc/protocols file." in
   Lwt_unix.of_unix_file_descr
     (Unix.socket Unix.PF_INET Unix.SOCK_DGRAM
-      (Unix.getprotobyname "udp").Unix.p_proto)
+      proto.Unix.p_proto)
 
 
 let start ?(host="127.0.0.1") ?(port=5683) handler =
