@@ -146,12 +146,12 @@ module Header = struct
   type t = int32
 
   let make ~version ~id ~token_length ~kind ~code =
-    let self = version lsl 30 in
-    let self = self + kind_to_int kind lsl 28 in
-    let self = self + token_length lsl 24 in
+    let self = Int32.shift_left (Int32.of_int version) 30 in
+    let self = Int32.add self (Int32.of_int (kind_to_int kind lsl 28)) in
+    let self = Int32.add self (Int32.of_int (token_length lsl 24)) in
     let encode_code code data =
-      let self = self + code lsl 21 in
-      let self = self + data lsl 16 in
+      let self = Int32.add self (Int32.of_int (code lsl 21)) in
+      let self = Int32.add self (Int32.of_int (data lsl 16)) in
       self in
     let self =
       match code with
@@ -181,8 +181,8 @@ module Header = struct
       | Response `Service_unavailable -> encode_code 5 03
       | Response `Gateway_timeout -> encode_code 5 04
       | Response `Proxying_not_supported -> encode_code 5 05 in
-    let self = self + id in
-    Int32.of_int self
+    let self = Int32.add self (Int32.of_int id) in
+    self
 
   let version self =
     Int32.shift_right_logical self 30
