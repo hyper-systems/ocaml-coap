@@ -26,13 +26,9 @@ let start ?(host="127.0.0.1") ?(port=5683) handler =
   let rec loop () =
     let* incoming = Lwt_unix.recvfrom sock buffer 0 max_coap_message_size [] in
     match incoming with
-    | len, (Unix.ADDR_INET (client_addr, _port) as client_sockaddr) ->
-      let client_host = (Unix.gethostbyaddr client_addr).Unix.h_name in
+    | len, (Unix.ADDR_INET (_client_addr, _port) as client_sockaddr) ->
       let req = Bytes.to_string (Bytes.sub buffer 0 len) in
       let req_result = Coap_core.Message.decode req in
-
-      let () = ignore (`Add_this_to_req client_host) in
-
       let* res = handler req_result in
       let res = Bytes.of_string (Coap_core.Message.encode (res)) in
       let res_len = Bytes.length res in
