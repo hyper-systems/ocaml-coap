@@ -1,4 +1,13 @@
 
+
+let exn_udp_not_found =
+  Failure "Could not find the `udp` protocol entry. Check your /etc/protocols file."
+
+
+let pp_inet_addr formatter addr =
+  Format.pp_print_string formatter (Unix.string_of_inet_addr addr)
+
+
 let (let*) m f = Lwt.bind m f
 
 
@@ -9,22 +18,34 @@ let log ?(channel=stdout) fmt =
 
 let max_coap_message_size = 1152
 
-let sock =
-  let proto = try Unix.getprotobyname "udp" with Not_found ->
-    failwith "Could not find the `udp` protocol entry. Check your /etc/protocols file." in
-  Lwt_unix.of_unix_file_descr
-    (Unix.socket Unix.PF_INET Unix.SOCK_DGRAM
-      proto.Unix.p_proto)
-
 
 let start ?(host="127.0.0.1") ?(port=5683) handler =
-  let addr = Unix.inet_addr_of_string host in
-  let* () = Lwt_unix.bind sock (Unix.ADDR_INET (addr, port)) in
+  let proto =
+    try Unix.getprotobyname "udp"
+    with Not_found -> raise exn_udp_not_found in
 
-  log "[INFO] Coap.Server: Listening... host=%S port=%d" host port;
+  let inet_addr, sockaddr =
+    match Unix.gethostbyname host with
+    | {h_addr_list; _} ->
+      let inet_addr = Array.get h_addr_list 0 in
+      let sockaddr = Unix.ADDR_INET (inet_addr, port) in
+      (inet_addr, sockaddr)
+    | exception Not_found ->
+      let inet_addr = Unix.inet_addr_of_string host in
+      let sockaddr = Unix.ADDR_INET (inet_addr, port) in
+      (inet_addr, sockaddr) in
+
+  let socket =
+    let domain = Unix.domain_of_sockaddr sockaddr in
+    Lwt_unix.of_unix_file_descr
+      (Unix.socket domain Unix.SOCK_DGRAM proto.Unix.p_proto) in
+
+  let* () = Lwt_unix.bind socket sockaddr in
+
+  log "[INFO] Coap.Server: Listening... addr=%a port=%d" pp_inet_addr inet_addr port;
   let buffer = Bytes.create max_coap_message_size in
   let rec loop () =
-    let* incoming = Lwt_unix.recvfrom sock buffer 0 max_coap_message_size [] in
+    let* incoming = Lwt_unix.recvfrom socket buffer 0 max_coap_message_size [] in
     match incoming with
     | len, (Unix.ADDR_INET (_client_addr, _port) as client_sockaddr) ->
       let req = Bytes.to_string (Bytes.sub buffer 0 len) in
@@ -33,7 +54,7 @@ let start ?(host="127.0.0.1") ?(port=5683) handler =
       let res = Bytes.of_string (Coap_core.Message.encode (res)) in
       let res_len = Bytes.length res in
       let* res_len_sent =
-        Lwt_unix.sendto sock res 0 res_len [] client_sockaddr in
+        Lwt_unix.sendto socket res 0 res_len [] client_sockaddr in
       if res_len_sent <> res_len then
         log "[ERROR] Could not send response message@.";
       loop ()
