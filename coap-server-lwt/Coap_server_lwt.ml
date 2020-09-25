@@ -43,18 +43,19 @@ let start ?(host="127.0.0.1") ?(port=5683) handler =
   let* () = Lwt_unix.bind socket sockaddr in
 
   log "[INFO] Coap.Server: Listening... addr=%a port=%d" pp_inet_addr inet_addr port;
-  let buffer = Bytes.create max_coap_message_size in
+  let req_cstruct = Cstruct.create max_coap_message_size in
   let rec loop () =
-    let* incoming = Lwt_unix.recvfrom socket buffer 0 max_coap_message_size [] in
+    let* incoming = Lwt_cstruct.recvfrom socket req_cstruct [] in
     match incoming with
     | len, (Unix.ADDR_INET (_client_addr, _port) as client_sockaddr) ->
-      let req = Bytes.to_string (Bytes.sub buffer 0 len) in
-      let req_result = Coap_core.Message.decode req in
+      let req_buffer = Cstruct.to_bigarray (Cstruct.sub req_cstruct 0 len) in
+      let req_result = Coap_core.Message.decode req_buffer in
       let* res = handler req_result in
-      let res = Bytes.of_string (Coap_core.Message.encode (res)) in
-      let res_len = Bytes.length res in
+      let res_buffer = Coap_core.Message.encode res in
+      let res_cstruct = Cstruct.of_bigarray res_buffer in
+      let res_len = Cstruct.len res_cstruct in
       let* res_len_sent =
-        Lwt_unix.sendto socket res 0 res_len [] client_sockaddr in
+        Lwt_cstruct.sendto socket res_cstruct [] client_sockaddr in
       if res_len_sent <> res_len then
         log "[ERROR] Could not send response message@.";
       loop ()

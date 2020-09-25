@@ -12,6 +12,12 @@ val pp_error : Format.formatter -> error -> unit
 module Message : sig
   type t
 
+  type buffer = (
+    char,
+    Bigarray_compat.int8_unsigned_elt,
+    Bigarray_compat.c_layout
+  ) Bigarray_compat.Array1.t
+
   type kind =
     | Confirmable
     | Nonconfirmable
@@ -93,7 +99,7 @@ module Message : sig
     -> code:code
     -> ?kind:kind
     -> ?options:option list
-    -> string
+    -> buffer
     -> t
 (** Coap message constructor. *)
 
@@ -115,13 +121,19 @@ module Message : sig
   val path : t -> string list
   (** Extract request path from message options. *)
 
-  val payload : t -> string
+  val payload : t -> buffer
+
+  val payload_length : t -> int
+
+  val buffer_to_string : buffer -> string
+
+  val buffer_of_string : string -> buffer
 
   val is_confirmable : t -> bool
 
-  val decode : string -> (t, error) result
+  val decode : buffer -> (t, error) result
 
-  val encode : t -> string
+  val encode : t -> buffer
 
   val pp : Format.formatter -> t -> unit
 
@@ -144,7 +156,7 @@ module Response : sig
     -> ?token:string
     -> ?kind:Message.kind
     -> ?options:Message.option list
-    -> string
+    -> Message.buffer
     -> Message.t
 
   val content
@@ -153,7 +165,7 @@ module Response : sig
     -> ?token:string
     -> ?kind:Message.kind
     -> ?options:Message.option list
-    -> string
+    -> Message.buffer
     -> Message.t
 end
 

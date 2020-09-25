@@ -26,6 +26,7 @@ depends: [
   "odoc" {with-doc}
   "fmt"
   "cstruct"
+  "cstruct-lwt"
   "stdint"
   "lwt"
 ]
