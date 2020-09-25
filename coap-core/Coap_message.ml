@@ -490,12 +490,29 @@ module Option = struct
 end
 
 
+type buffer = (
+  char,
+  Bigarray_compat.int8_unsigned_elt,
+  Bigarray_compat.c_layout
+) Bigarray_compat.Array1.t
+
+
 type t = {
   header : Int32.t;
   token : string;
   options : option list;
-  payload : string;
+  payload : buffer;
 }
+
+let buffer_to_string payload =
+  Cstruct.of_bigarray payload
+  |> Cstruct.to_string
+
+
+let buffer_of_string string =
+  Cstruct.of_string string
+  |> Cstruct.to_bigarray
+
 
 let pp_options =
   Format.pp_print_list
@@ -524,6 +541,11 @@ let payload self =
   self.payload
 
 
+let payload_length self =
+  Bigarray_compat.Array1.dim self.payload
+
+
+
 let path self =
   List.fold_left
     (fun r opt -> match opt with Uri_path x -> x :: r | _ -> r)
@@ -542,7 +564,7 @@ let is_confirmable self =
 
 let length self =
   let token_length = String.length self.token in
-  let payload_length = String.length self.payload in
+  let payload_length = Bigarray_compat.Array1.dim self.payload in
   let payload_length =
     if payload_length <> 0 then payload_length + 1
     else payload_length in
@@ -556,8 +578,8 @@ let length self =
 
 (* Message decoding *)
 
-let decode data =
-  let data = Cstruct.of_string data in
+let decode buffer =
+  let data = Cstruct.of_bigarray buffer in
   let header = Cstruct.BE.get_uint32 data 0 in
 
   let token_length = Header.token_length header in
@@ -595,7 +617,7 @@ let decode data =
     in
     let* options, i = decode_options (4 + token_length) 0 [] in
     let payload = Cstruct.sub data i (Cstruct.len data - i) in
-    let payload = Cstruct.to_string payload in
+    let payload = Cstruct.to_bigarray payload in
     return { header; token; options; payload }
 
 
@@ -658,11 +680,12 @@ let encode_options data i options =
 
 
 let encode_payload data i payload =
-  let payload_length = String.length payload in
+  let payload_length = Bigarray_compat.Array1.dim payload in
   if payload_length > 0 then begin
     Cstruct.set_char data i (Char.chr payload_marker);
     let i = i + 1 in
-    Cstruct.blit_from_string payload 0 data i payload_length;
+    let payload = Cstruct.of_bigarray payload in
+    Cstruct.blit payload 0 data i payload_length;
     i + payload_length
   end else i
 
@@ -674,7 +697,7 @@ let encode self =
   let i = encode_token data i self.token in
   let i = encode_options data i self.options in
   let _ = encode_payload data i self.payload in
-  Cstruct.to_string data
+  Cstruct.to_bigarray data
 
 
 
@@ -689,7 +712,6 @@ let gen_id =
 let make
     ?(version=1) ?(id=gen_id()) ?(token="") ~code ?(kind=Confirmable)
     ?(options=[]) payload =
-  ignore (version, id, token, code, kind, options, payload);
   let token_length = String.length token in
   let header = Header.make ~version ~id ~token_length ~kind ~code in
   { header; token; options; payload }
@@ -712,7 +734,7 @@ let pp f self =
     pp_kind (kind self)
     pp_code (code self)
     pp_options (options self)
-    (payload self)
+    (payload self |> buffer_to_string)
 
 let max_size = 1152
 
