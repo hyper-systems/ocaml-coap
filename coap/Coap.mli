@@ -176,8 +176,11 @@ end
 
 module Server : sig
   val start
-    : ?host:string -> ?port:int
+    : ?addr:string -> ?port:int
     -> ((Message.t, error) result -> Message.t Lwt.t)
-    -> 'a Lwt.t
+    -> unit Lwt.t
+  (** [start ~addr ~port handler] starts the CoAP server in a Lwt thread
+      listening for client requests on the provided IPv4 or IPv6 address/port
+      and handling incoming requests with the [handler] function. *)
 end
 
