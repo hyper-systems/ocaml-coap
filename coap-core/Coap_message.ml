@@ -269,6 +269,7 @@ type option =
   | Uri_host of string
   | Etag of string
   | If_none_match
+  | Observe of [ `Register | `Deregister | `Sequnce of int ]
   | Uri_port of int
   | Location_path of string
   | Uri_path of string
@@ -331,12 +332,27 @@ module Option = struct
       invalid_arg ("option length("^ string_of_int length ^") > 4")
 
 
+  let observe_of_int n =
+    match n with
+    | 0 -> `Register
+    | 1 -> `Deregister
+    | n -> `Sequnce n
+
+
+  let observe_to_int n =
+    match n with
+    | `Register   -> 0
+    | `Deregister -> 1
+    | `Sequnce n  -> n
+
+
   let decode n value length =
     match n with
     | 1 -> If_match (Cstruct.to_string value)
     | 3 -> Uri_host (Cstruct.to_string value)
     | 4 -> Etag (Cstruct.to_string value)
     | 5 -> If_none_match
+    | 6 -> Observe (observe_of_int (decode_int value length))
     | 7 -> Uri_port (decode_int value length)
     | 8 -> Location_path (Cstruct.to_string value)
     | 11 -> Uri_path (Cstruct.to_string value)
@@ -382,6 +398,7 @@ module Option = struct
     | Uri_host x -> (3, x)
     | Etag x -> (4, x)
     | If_none_match -> (5, "")
+    | Observe x -> (6, encode_int (observe_to_int x))
     | Uri_port x -> (7, encode_int x)
     | Location_path x -> (8, x)
     | Uri_path x -> (11, x)
@@ -402,6 +419,7 @@ module Option = struct
     | Uri_host _ -> 3
     | Etag _ -> 4
     | If_none_match -> 5
+    | Observe _ -> 6
     | Uri_port _ -> 7
     | Location_path _ -> 8
     | Uri_path _ -> 11
@@ -420,6 +438,7 @@ module Option = struct
     | 3 -> "Uri_host"
     | 4 -> "Etag"
     | 5 -> "If_none_mat"
+    | 6 -> "Observe"
     | 7 -> "Uri_port"
     | 8 -> "Location_path"
     | 11 -> "Uri_path"
@@ -435,6 +454,12 @@ module Option = struct
 
 
   let value_length self =
+    let uint_length n =
+      if n <= 0xFF     then 1 else
+      if n <= 0xFFFF   then 2 else
+      if n <= 0xFFFFFF then 3 else
+      4
+    in
     match self with
     | If_none_match -> 0
     | If_match x
@@ -447,14 +472,11 @@ module Option = struct
     | Proxy_scheme x
     | Uri_query x -> String.length x
     | Content_format _ -> 666 (* FIXME *)
+    | Observe x -> uint_length (observe_to_int x)
     | Uri_port x
     | Max_age x
     | Accept x
-    | Size1 x ->
-      if x <= 0xFF     then 1 else
-      if x <= 0xFFFF   then 2 else
-      if x <= 0xFFFFFF then 3 else
-      4
+    | Size1 x -> uint_length x
 
 
   let length self =
@@ -468,6 +490,12 @@ module Option = struct
     compare (number a) (number b)
 
 
+  let pp_observe f observe =
+    match observe with
+    | `Register -> Format.fprintf f "Register"
+    | `Deregister -> Format.fprintf f "Deregister"
+    | `Sequnce n -> Format.fprintf f "@[(Sequence %d)@]" n
+
   let pp f self =
     let p fmt = Format.fprintf f fmt in
     match self with
@@ -475,6 +503,7 @@ module Option = struct
     | Uri_host x -> p "@[(Uri_host %S)@]" x
     | Etag x -> p "@[(Etag %S)@]" x
     | If_none_match -> p "If_none_match"
+    | Observe x -> p "@[(Option %a)@]" pp_observe x
     | Uri_port x -> p "@[(Uri_port %d)@]" x
     | Location_path x -> p "@[(Location_path %S)@]" x
     | Uri_path x -> p "@[(Uri_path %S)@]" x

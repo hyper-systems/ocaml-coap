@@ -80,6 +80,7 @@ module Message : sig
     | Uri_host of string
     | Etag of string
     | If_none_match
+    | Observe of [ `Register | `Deregister | `Sequnce of int ]
     | Uri_port of int
     | Location_path of string
     | Uri_path of string
