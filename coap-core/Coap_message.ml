@@ -502,6 +502,7 @@ type t = {
   token : string;
   options : option list;
   payload : buffer;
+  client_addr : string Stdlib.Option.t;
 }
 
 let buffer_to_string payload =
@@ -539,6 +540,12 @@ let options self =
 
 let payload self =
   self.payload
+
+let client_addr self =
+    self.client_addr
+
+let with_client_addr client_addr self =
+    {self with client_addr }
 
 
 let payload_length self =
@@ -618,7 +625,7 @@ let decode buffer =
     let* options, i = decode_options (4 + token_length) 0 [] in
     let payload = Cstruct.sub data i (Cstruct.len data - i) in
     let payload = Cstruct.to_bigarray payload in
-    return { header; token; options; payload }
+    return { header; token; options; payload; client_addr = None }
 
 
 
@@ -711,10 +718,10 @@ let gen_id =
 
 let make
     ?(version=1) ?(id=gen_id()) ?(token="") ~code ?(kind=Confirmable)
-    ?(options=[]) payload =
+    ?(options=[]) ?client_addr payload =
   let token_length = String.length token in
   let header = Header.make ~version ~id ~token_length ~kind ~code in
-  { header; token; options; payload }
+  { header; token; options; payload; client_addr }
 
 
 

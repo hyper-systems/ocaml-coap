@@ -99,6 +99,7 @@ module Message : sig
     -> code:code
     -> ?kind:kind
     -> ?options:option list
+    -> ?client_addr:string
     -> buffer
     -> t
 (** Coap message constructor. *)
@@ -120,6 +121,10 @@ module Message : sig
 
   val path : t -> string list
   (** Extract request path from message options. *)
+
+  val client_addr : t -> string Stdlib.Option.t
+  
+  val with_client_addr : string Stdlib.Option.t -> t -> t
 
   val payload : t -> buffer
 

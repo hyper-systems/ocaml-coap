@@ -54,9 +54,11 @@ let start ?(addr="127.0.0.1") ?(port=5683) handler =
   let process_request () =
     let* incoming = Lwt_cstruct.recvfrom socket req_cstruct [] in
     match incoming with
-    | len, (Unix.ADDR_INET (_client_addr, _port) as client_sockaddr) ->
+    | len, (Unix.ADDR_INET (client_addr, port) as client_sockaddr) ->
       let req_buffer = Cstruct.to_bigarray (Cstruct.sub req_cstruct 0 len) in
       let req_result = Coap_core.Message.decode req_buffer in
+      let client_addr = Format.asprintf "%a:%d" pp_inet_addr client_addr port in
+      let req_result = Result.map (Coap_core.Message.with_client_addr (Some client_addr)) req_result in
       let* res = handler req_result in
       let res_buffer = Coap_core.Message.encode res in
       let res_cstruct = Cstruct.of_bigarray res_buffer in
