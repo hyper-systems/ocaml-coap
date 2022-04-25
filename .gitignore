@@ -1,4 +1,5 @@
 _esy
 _build
+_opam
 node_modules
 .merlin
