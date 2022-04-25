@@ -62,7 +62,7 @@ let start ?(addr="127.0.0.1") ?(port=5683) handler =
       let* res = handler req_result in
       let res_buffer = Coap_core.Message.encode res in
       let res_cstruct = Cstruct.of_bigarray res_buffer in
-      let res_len = Cstruct.len res_cstruct in
+      let res_len = Cstruct.length res_cstruct in
       let* res_len_sent =
         Lwt_cstruct.sendto socket res_cstruct [] client_sockaddr in
       if res_len_sent <> res_len then

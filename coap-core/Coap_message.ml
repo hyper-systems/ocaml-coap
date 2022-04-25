@@ -492,9 +492,9 @@ end
 
 type buffer = (
   char,
-  Bigarray_compat.int8_unsigned_elt,
-  Bigarray_compat.c_layout
-) Bigarray_compat.Array1.t
+  Bigarray.int8_unsigned_elt,
+  Bigarray.c_layout
+) Bigarray.Array1.t
 
 
 type t = {
@@ -549,7 +549,7 @@ let with_client_addr client_addr self =
 
 
 let payload_length self =
-  Bigarray_compat.Array1.dim self.payload
+  Bigarray.Array1.dim self.payload
 
 
 
@@ -571,7 +571,7 @@ let is_confirmable self =
 
 let length self =
   let token_length = String.length self.token in
-  let payload_length = Bigarray_compat.Array1.dim self.payload in
+  let payload_length = Bigarray.Array1.dim self.payload in
   let payload_length =
     if payload_length <> 0 then payload_length + 1
     else payload_length in
@@ -595,7 +595,7 @@ let decode buffer =
     let token = Cstruct.to_string token in
 
     let rec decode_options i prev_delta options =
-      if i >= Cstruct.len data then Ok (List.rev options, i) else
+      if i >= Cstruct.length data then Ok (List.rev options, i) else
       let byte0 = Cstruct.get_uint8 data i in
       let i = i + 1 in
       if byte0 = payload_marker then Ok (List.rev options, i) else
@@ -623,7 +623,7 @@ let decode buffer =
         decode_options i number options
     in
     let* options, i = decode_options (4 + token_length) 0 [] in
-    let payload = Cstruct.sub data i (Cstruct.len data - i) in
+    let payload = Cstruct.sub data i (Cstruct.length data - i) in
     let payload = Cstruct.to_bigarray payload in
     return { header; token; options; payload; client_addr = None }
 
@@ -687,7 +687,7 @@ let encode_options data i options =
 
 
 let encode_payload data i payload =
-  let payload_length = Bigarray_compat.Array1.dim payload in
+  let payload_length = Bigarray.Array1.dim payload in
   if payload_length > 0 then begin
     Cstruct.set_char data i (Char.chr payload_marker);
     let i = i + 1 in

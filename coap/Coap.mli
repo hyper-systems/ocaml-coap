@@ -14,8 +14,8 @@ module Message : sig
 
 
   type buffer =
-    (char, Bigarray_compat.int8_unsigned_elt, Bigarray_compat.c_layout)
-      Bigarray_compat.Array1.t
+    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
+      Bigarray.Array1.t
  (** The type of bigarray buffers used to represent message payloads.
 
      Note: This type is compatible with Cstruct buffers.

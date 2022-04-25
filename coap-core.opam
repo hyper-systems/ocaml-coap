@@ -29,6 +29,6 @@ depends: [
   "dune" {build}
   "fmt"
   "cstruct"
-  "bigarray-compat"
+  "base-bigarray"
   "stdint"
 ]
