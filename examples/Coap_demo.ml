@@ -23,15 +23,17 @@ let msg2_data =
 let msg4_data = "\x44\x02\xd9\xb9\x74\x6f\x6b\x31\x31\x48\x43\xa9\x8a\xc7\x71\x41\xff\x73\x6f\x6d\x65\x74\x68\x69\x6e\x67"
 
 
-let recode expected =
+let recode expected_str =
+  let expected = Coap_core.Message.buffer_of_string expected_str in
   let* msg = Coap_core.Message.decode expected in
   Format.printf "recode: msg=%a@." Coap_core.Message.pp msg;
   let actual = Coap_core.Message.encode msg in
-  if not (String.equal expected actual) then begin
-    let expected = Cstruct.of_string expected in
-    let actual = Cstruct.of_string actual in
+  let actual_str = Coap_core.Message.buffer_to_string actual in
+  if not (String.equal expected_str actual_str) then begin
+    let expected_cstr = Cstruct.of_bigarray expected in
+    let actual_cstr = Cstruct.of_bigarray actual in
     Format.printf "recode failed@. - %a@, + %a@]@."
-      Cstruct.hexdump_pp expected Cstruct.hexdump_pp actual;
+      Cstruct.hexdump_pp expected_cstr Cstruct.hexdump_pp actual_cstr;
     exit 1
   end else Ok ()
 
@@ -43,16 +45,20 @@ let test_message_encoder () = run begin
   Ok ()
 end
 
-
-let () = run begin
-  let () = Coap_server_unix.start begin function
+let () =
+  Coap_server_lwt.start begin function
     | Ok req ->
+      Format.eprintf "--- REQUEST MESSAGE ---@.%a@.@." Coap_core.Message.pp req;
       let token = Coap_core.Message.token req in
-      Coap_core.Message.make ~code:(Response `Content) ~token "Hello, world!"
+      let payload = Coap_core.Message.buffer_of_string "Hello, world!" in
+      let message = Coap_core.Message.make ~code:(Response `Content) ~token payload in
+      Lwt.return message
     | Error e ->
       Format.eprintf "[ERROR] %a@." Coap_core.pp_error e;
-      Coap_core.Message.make ~code:(Response `Internal_server_error) "Oh no!"
-  end in
-  Ok ()
-end
+      let payload = Coap_core.Message.buffer_of_string "Oh no!" in
+      let message = Coap_core.Message.make ~code:(Response `Internal_server_error) payload in
+      Lwt.return message
+  end
+  |> Lwt_main.run
+
 

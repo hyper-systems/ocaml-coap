@@ -1,7 +1,5 @@
-
 (executable
-  (name Coap_demo)
-  (modules Coap_demo)
-  (libraries coap-core coap-server-unix fmt)
-  (preprocess future_syntax))
-
+ (name Coap_demo)
+ (modules Coap_demo)
+ (libraries coap-core coap-server-lwt fmt)
+ (preprocess future_syntax))
