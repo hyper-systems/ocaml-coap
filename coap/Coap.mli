@@ -1,84 +1,56 @@
-
-
-type error = [
-  | `Invalid_token_length
-  | `Invalid_option_delta
-  | `Invalid_option_length
-]
+type error =
+  [ `Invalid_token_length | `Invalid_option_delta | `Invalid_option_length ]
 
 val pp_error : Format.formatter -> error -> unit
-
 
 module Message : sig
   type t
 
-
   type buffer =
-    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout)
-      Bigarray.Array1.t
- (** The type of bigarray buffers used to represent message payloads.
+    (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
+  (** The type of bigarray buffers used to represent message payloads.
 
-     Note: This type is compatible with Cstruct buffers.
+      Note: This type is compatible with Cstruct buffers.
 
-     See: {!val:Coap.Message.Coap_core.Message.payload_to_buffer} *)
+      See: {!val:Coap.Message.Coap_core.Message.payload_to_buffer} *)
 
-
-  type kind =
-    | Confirmable
-    | Nonconfirmable
-    | Acknowledgement
-    | Reset
+  type kind = Confirmable | Nonconfirmable | Acknowledgement | Reset
 
   type code =
     | Empty
-    | Request of [
-      | `Get
-      | `Post
-      | `Put
-      | `Delete
-    ]
-    | Response of [
-      (* 2XX *)
-      | `Created
-      | `Deleted
-      | `Valid
-      | `Changed
-      | `Content
-
-      (* 4XX *)
-      | `Bad_request
-      | `Unauthorized
-      | `Bad_option
-      | `Forbidden
-      | `Not_found
-      | `Method_not_allowed
-      | `Not_acceptable
-      | `Precondition_failed
-      | `Request_entity_too_large
-      | `Unsupported_content_format
-
-      (* 5xx *)
-      | `Internal_server_error
-      | `Not_implemented
-      | `Bad_gateway
-      | `Service_unavailable
-      | `Gateway_timeout
-      | `Proxying_not_supported
-    ]
+    | Request of [ `Get | `Post | `Put | `Delete ]
+    | Response of
+        [ (* 2XX *)
+          `Created
+        | `Deleted
+        | `Valid
+        | `Changed
+        | `Content
+        | (* 4XX *)
+          `Bad_request
+        | `Unauthorized
+        | `Bad_option
+        | `Forbidden
+        | `Not_found
+        | `Method_not_allowed
+        | `Not_acceptable
+        | `Precondition_failed
+        | `Request_entity_too_large
+        | `Unsupported_content_format
+        | (* 5xx *)
+          `Internal_server_error
+        | `Not_implemented
+        | `Bad_gateway
+        | `Service_unavailable
+        | `Gateway_timeout
+        | `Proxying_not_supported ]
 
   val pp_code : Format.formatter -> code -> unit
 
-  type content_format = [
-    | `Text of [ `Plain ]
-    | `Application of [
-        | `Link_format
-        | `Xml
-        | `Octet_stream
-        | `Exi
-        | `Json
-        | `Cbor
-      ]
-  ]
+  type content_format =
+    [ `Text of [ `Plain ]
+    | `Application of
+      [ `Link_format | `Xml | `Octet_stream | `Exi | `Json | `Cbor ] ]
 
   type option =
     | If_match of string
@@ -97,24 +69,21 @@ module Message : sig
     | Proxy_scheme of string
     | Size1 of int
 
-  val make
-     : ?version:int
-    -> ?id:int
-    -> ?token:string
-    -> code:code
-    -> ?kind:kind
-    -> ?options:option list
-    -> ?client_addr:string
-    -> buffer
-    -> t
-(** Coap message constructor. *)
+  val make :
+    ?version:int ->
+    ?id:int ->
+    ?token:string ->
+    code:code ->
+    ?kind:kind ->
+    ?options:option list ->
+    ?client_addr:string ->
+    buffer ->
+    t
+  (** Coap message constructor. *)
 
   val version : t -> int
-
   val id : t -> int
-
   val kind : t -> kind
-
   val code : t -> code
 
   val token : t -> string
@@ -128,25 +97,15 @@ module Message : sig
   (** Extract request path from message options. *)
 
   val client_addr : t -> string Stdlib.Option.t
-  
   val with_client_addr : string Stdlib.Option.t -> t -> t
-
   val payload : t -> buffer
-
   val payload_length : t -> int
-
   val buffer_to_string : buffer -> string
-
   val buffer_of_string : string -> buffer
-
   val is_confirmable : t -> bool
-
   val decode : buffer -> (t, error) result
-
   val encode : t -> buffer
-
   val pp : Format.formatter -> t -> unit
-
 
   val max_size : int
   (** Maximum safe message size.
@@ -154,38 +113,35 @@ module Message : sig
       https://tools.ietf.org/html/rfc7252#section-4.6 *)
 end
 
-
-module Request : sig
-
-end
+module Request : sig end
 
 module Response : sig
-  val not_found
-     : ?version:int
-    -> ?id:int
-    -> ?token:string
-    -> ?kind:Message.kind
-    -> ?options:Message.option list
-    -> Message.buffer
-    -> Message.t
+  val not_found :
+    ?version:int ->
+    ?id:int ->
+    ?token:string ->
+    ?kind:Message.kind ->
+    ?options:Message.option list ->
+    Message.buffer ->
+    Message.t
 
-  val content
-     : ?version:int
-    -> ?id:int
-    -> ?token:string
-    -> ?kind:Message.kind
-    -> ?options:Message.option list
-    -> Message.buffer
-    -> Message.t
+  val content :
+    ?version:int ->
+    ?id:int ->
+    ?token:string ->
+    ?kind:Message.kind ->
+    ?options:Message.option list ->
+    Message.buffer ->
+    Message.t
 end
 
 module Server : sig
-  val start
-    : ?addr:string -> ?port:int
-    -> ((Message.t, error) result -> Message.t Lwt.t)
-    -> unit Lwt.t
+  val start :
+    ?addr:string ->
+    ?port:int ->
+    ((Message.t, error) result -> Message.t Lwt.t) ->
+    unit Lwt.t
   (** [start ~addr ~port handler] starts the CoAP server in a Lwt thread
       listening for client requests on the provided IPv4 or IPv6 address/port
       and handling incoming requests with the [handler] function. *)
 end
-
