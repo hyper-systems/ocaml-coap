@@ -1,20 +1,9 @@
-
-
-let (let*) res f =
-  match res with
-  | Ok x -> f x
-  | Error e -> Error e
-
+let ( let* ) res f = match res with Ok x -> f x | Error e -> Error e
 let return x = Ok x
-
 
 (* Message kind *)
 
-type kind =
-  | Confirmable
-  | Nonconfirmable
-  | Acknowledgement
-  | Reset
+type kind = Confirmable | Nonconfirmable | Acknowledgement | Reset
 
 let pp_kind f k =
   let p = Format.fprintf f in
@@ -39,46 +28,36 @@ let kind_to_int k =
   | Acknowledgement -> 2
   | Reset -> 3
 
-
 (* Message code *)
 
 type code =
   | Empty
-  | Request of [
-    | `Get
-    | `Post
-    | `Put
-    | `Delete
-  ]
-  | Response of [
-    (* 2XX *)
-    | `Created
-    | `Deleted
-    | `Valid
-    | `Changed
-    | `Content
-
-    (* 4XX *)
-    | `Bad_request
-    | `Unauthorized
-    | `Bad_option
-    | `Forbidden
-    | `Not_found
-    | `Method_not_allowed
-    | `Not_acceptable
-    | `Precondition_failed
-    | `Request_entity_too_large
-    | `Unsupported_content_format
-
-    (* 5xx *)
-    | `Internal_server_error
-    | `Not_implemented
-    | `Bad_gateway
-    | `Service_unavailable
-    | `Gateway_timeout
-    | `Proxying_not_supported
-  ]
-
+  | Request of [ `Get | `Post | `Put | `Delete ]
+  | Response of
+      [ (* 2XX *)
+        `Created
+      | `Deleted
+      | `Valid
+      | `Changed
+      | `Content
+      | (* 4XX *)
+        `Bad_request
+      | `Unauthorized
+      | `Bad_option
+      | `Forbidden
+      | `Not_found
+      | `Method_not_allowed
+      | `Not_acceptable
+      | `Precondition_failed
+      | `Request_entity_too_large
+      | `Unsupported_content_format
+      | (* 5xx *)
+        `Internal_server_error
+      | `Not_implemented
+      | `Bad_gateway
+      | `Service_unavailable
+      | `Gateway_timeout
+      | `Proxying_not_supported ]
 
 let dump_request_kind f k =
   let p = Format.fprintf f in
@@ -87,7 +66,6 @@ let dump_request_kind f k =
   | `Post -> p "`Post"
   | `Put -> p "`Put"
   | `Delete -> p "`Delete"
-
 
 let dump_response_kind f k =
   let p = Format.fprintf f in
@@ -117,28 +95,18 @@ let dump_response_kind f k =
   | `Gateway_timeout -> p "`Gateway_timeout"
   | `Proxying_not_supported -> p "`Proxying_not_supported"
 
-
 let pp_code f x =
   match x with
   | Empty -> Format.fprintf f "Empty"
   | Request x -> Format.fprintf f "Request %a" dump_request_kind x
   | Response x -> Format.fprintf f "Response %a" dump_response_kind x
 
-
 (* Message content format *)
 
-type content_format = [
-  | `Text of [ `Plain ]
-  | `Application of [
-    | `Link_format
-    | `Xml
-    | `Octet_stream
-    | `Exi
-    | `Json
-    | `Cbor
-  ]
-]
-
+type content_format =
+  [ `Text of [ `Plain ]
+  | `Application of
+    [ `Link_format | `Xml | `Octet_stream | `Exi | `Json | `Cbor ] ]
 
 (* Message header *)
 
@@ -152,7 +120,8 @@ module Header = struct
     let encode_code code data =
       let self = Int32.add self (Int32.of_int (code lsl 21)) in
       let self = Int32.add self (Int32.of_int (data lsl 16)) in
-      self in
+      self
+    in
     let self =
       match code with
       | Empty -> encode_code 0 00
@@ -180,50 +149,46 @@ module Header = struct
       | Response `Bad_gateway -> encode_code 5 02
       | Response `Service_unavailable -> encode_code 5 03
       | Response `Gateway_timeout -> encode_code 5 04
-      | Response `Proxying_not_supported -> encode_code 5 05 in
+      | Response `Proxying_not_supported -> encode_code 5 05
+    in
     let self = Int32.add self (Int32.of_int id) in
     self
 
-  let version self =
-    Int32.shift_right_logical self 30
-    |> Int32.to_int
+  let version self = Int32.shift_right_logical self 30 |> Int32.to_int
 
   let kind self =
-    let mask, shift = 0b00110000000000000000000000000000, 28 in
+    let mask, shift = (0b00110000000000000000000000000000, 28) in
     Int32.(shift_right_logical (logand self (of_int mask))) shift
     |> Int32.to_int
     |> kind_of_int
 
   let token_length self =
-    let mask, shift = 0b00001111000000000000000000000000, 24 in
+    let mask, shift = (0b00001111000000000000000000000000, 24) in
     Int32.(shift_right_logical (logand self (of_int mask))) shift
     |> Int32.to_int
 
   let code self =
-    let mask, shift = 0b00000000111000000000000000000000, 21 in
+    let mask, shift = (0b00000000111000000000000000000000, 21) in
     let mask = Int32.of_int mask in
     let code = Int32.(shift_right_logical (logand self mask)) shift in
     let code = Int32.to_int code in
 
-    let mask, shift = 0b00000000000111110000000000000000, 16 in
+    let mask, shift = (0b00000000000111110000000000000000, 16) in
     let mask = Int32.of_int mask in
     let data = Int32.(shift_right_logical (logand self mask)) shift in
     let data = Int32.to_int data in
-    match code, data with
+    match (code, data) with
     | 0, 00 -> Empty
     | 0, 01 -> Request `Get
     | 0, 02 -> Request `Post
     | 0, 03 -> Request `Put
     | 0, 04 -> Request `Delete
-
-    | (1|3), _ -> failwith "Reserved"
-
+    | (1 | 3), _ -> failwith "Reserved"
     | 2, 01 -> Response `Created
     | 2, 02 -> Response `Deleted
     | 2, 03 -> Response `Valid
     | 2, 04 -> Response `Changed
     | 2, 05 -> Response `Content
-
     | 4, 00 -> Response `Bad_request
     | 4, 01 -> Response `Unauthorized
     | 4, 02 -> Response `Bad_option
@@ -234,33 +199,25 @@ module Header = struct
     | 4, 12 -> Response `Precondition_failed
     | 4, 13 -> Response `Request_entity_too_large
     | 4, 15 -> Response `Unsupported_content_format
-
     | 5, 00 -> Response `Internal_server_error
     | 5, 01 -> Response `Not_implemented
     | 5, 02 -> Response `Bad_gateway
     | 5, 03 -> Response `Service_unavailable
     | 5, 04 -> Response `Gateway_timeout
     | 5, 05 -> Response `Proxying_not_supported
-
     | _ -> failwith "Unassigned message code"
-
 
   let id self =
     let mask = 0b00000000000000001111111111111111 in
-    Int32.(logand self (of_int mask))
-    |> Int32.to_int
+    Int32.(logand self (of_int mask)) |> Int32.to_int
 
   let pp f self =
     Format.fprintf f
-      "(@[<2>Coap.Header@ (version %d)@ (kind %a)@ (token_length %d)@ \
-      (code %a)@ (id %d)@])"
-      (version self)
-      pp_kind (kind self)
-      (token_length self)
-      pp_code (code self)
+      "(@[<2>Coap.Header@ (version %d)@ (kind %a)@ (token_length %d)@ (code \
+       %a)@ (id %d)@])"
+      (version self) pp_kind (kind self) (token_length self) pp_code (code self)
       (id self)
 end
-
 
 (* Message options *)
 
@@ -287,7 +244,7 @@ module Option = struct
 
   let content_format_of_int n =
     match n with
-    | 0  -> `Text `Plain
+    | 0 -> `Text `Plain
     | 40 -> `Application `Link_format
     | 41 -> `Application `Xml
     | 42 -> `Application `Octet_stream
@@ -312,24 +269,16 @@ module Option = struct
     (* debug "(decode_int (value:str %S) (value:hex %a) (length %d))" *)
     (*   (Cstruct.to_string value) *)
     (*   Cstruct.hexdump_pp value length; *)
-    if length = 0 then 0 else
-    if length = 1 then
-      Cstruct.get_uint8 value 0
-    else
-    if length = 2 then
-      Cstruct.BE.get_uint16 value 0
-    else
-    if length = 3 then
+    if length = 0 then 0
+    else if length = 1 then Cstruct.get_uint8 value 0
+    else if length = 2 then Cstruct.BE.get_uint16 value 0
+    else if length = 3 then
       let a = Cstruct.get_uint8 value 0 in
       let b = Cstruct.get_uint8 value 1 in
       let c = Cstruct.get_uint8 value 2 in
       (a lsl 16) lor (b lsl 8) lor c
-    else
-    if length = 4 then
-      Int32.to_int (Cstruct.BE.get_uint32 value 0)
-    else
-      invalid_arg ("option length("^ string_of_int length ^") > 4")
-
+    else if length = 4 then Int32.to_int (Cstruct.BE.get_uint32 value 0)
+    else invalid_arg ("option length(" ^ string_of_int length ^ ") > 4")
 
   let decode n value length =
     match n with
@@ -351,30 +300,27 @@ module Option = struct
     | 128 | 132 | 136 | 140 -> invalid_arg "Reserved option number"
     | _ -> invalid_arg "Unknown option number"
 
-
   let encode_int x =
     let data =
-      if x <= 0xFF then
-        (let out = Cstruct.create 1 in
-         Cstruct.set_uint8 out 0 x;
-         out)
+      if x <= 0xFF then (
+        let out = Cstruct.create 1 in
+        Cstruct.set_uint8 out 0 x;
+        out)
+      else if x <= 0xFFFF then (
+        let out = Cstruct.create 2 in
+        Cstruct.BE.set_uint16 out 0 x;
+        out)
+      else if x <= 0xFFFFFF then (
+        let out = Cstruct.create 3 in
+        Cstruct.BE.set_uint16 out 0 (x lsr 8);
+        Cstruct.set_uint8 out 2 (x land 0xFF);
+        out)
       else
-      if x <= 0xFFFF then
-        (let out = Cstruct.create 2 in
-         Cstruct.BE.set_uint16 out 0 x;
-         out)
-      else
-      if x <= 0xFFFFFF then
-        (let out = Cstruct.create 3 in
-         Cstruct.BE.set_uint16 out 0 (x lsr 8);
-         Cstruct.set_uint8 out 2 (x land 0xFF);
-         out)
-      else
-        (let out = Cstruct.create 4 in
-         Cstruct.BE.set_uint32 out 0 (Int32.of_int x);
-         out) in
+        let out = Cstruct.create 4 in
+        Cstruct.BE.set_uint32 out 0 (Int32.of_int x);
+        out
+    in
     Cstruct.to_string data
-
 
   let encode self =
     match self with
@@ -393,8 +339,6 @@ module Option = struct
     | Proxy_uri x -> (35, x)
     | Proxy_scheme x -> (39, x)
     | Size1 x -> (60, encode_int x)
-
-
 
   let number self =
     match self with
@@ -433,7 +377,6 @@ module Option = struct
     | 60 -> "Size1"
     | _ -> invalid_arg "Unknown option number"
 
-
   let value_length self =
     match self with
     | If_none_match -> 0
@@ -445,28 +388,25 @@ module Option = struct
     | Location_query x
     | Proxy_uri x
     | Proxy_scheme x
-    | Uri_query x -> String.length x
+    | Uri_query x ->
+      String.length x
     | Content_format _ -> 666 (* FIXME *)
-    | Uri_port x
-    | Max_age x
-    | Accept x
-    | Size1 x ->
-      if x <= 0xFF     then 1 else
-      if x <= 0xFFFF   then 2 else
-      if x <= 0xFFFFFF then 3 else
-      4
-
+    | Uri_port x | Max_age x | Accept x | Size1 x ->
+      if x <= 0xFF then 1
+      else if x <= 0xFFFF then 2
+      else if x <= 0xFFFFFF then 3
+      else 4
 
   let length self =
-    let extended_delta = 0 in (* FIXME *)
-    let extended_length = 0 in (* FIXME *)
+    let extended_delta = 0 in
+    (* FIXME *)
+    let extended_length = 0 in
+    (* FIXME *)
     1 + extended_delta + extended_length + value_length self
-
 
   let compare a b =
     let compare : int -> int -> int = Stdlib.compare in
     compare (number a) (number b)
-
 
   let pp f self =
     let p fmt = Format.fprintf f fmt in
@@ -486,16 +426,10 @@ module Option = struct
     | Proxy_uri x -> p "@[(Proxy_uri %S)@]" x
     | Proxy_scheme x -> p "@[(Proxy_scheme %S)@]" x
     | Size1 x -> p "@[(Size1 %d)@]" x
-
 end
 
-
-type buffer = (
-  char,
-  Bigarray.int8_unsigned_elt,
-  Bigarray.c_layout
-) Bigarray.Array1.t
-
+type buffer =
+  (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
 type t = {
   header : Int32.t;
@@ -505,53 +439,19 @@ type t = {
   client_addr : string Stdlib.Option.t;
 }
 
-let buffer_to_string payload =
-  Cstruct.of_bigarray payload
-  |> Cstruct.to_string
-
-
-let buffer_of_string string =
-  Cstruct.of_string string
-  |> Cstruct.to_bigarray
-
-
-let pp_options =
-  Format.pp_print_list
-    ~pp_sep:Format.pp_print_space
-    Option.pp
-
-let version self =
-  Header.version self.header
-
-let kind self =
-  Header.kind self.header
-
-let code self =
-  Header.code self.header
-
-let id self =
-  Header.id self.header
-
-let token self =
-  self.token
-
-let options self =
-  self.options
-
-let payload self =
-  self.payload
-
-let client_addr self =
-    self.client_addr
-
-let with_client_addr client_addr self =
-    {self with client_addr }
-
-
-let payload_length self =
-  Bigarray.Array1.dim self.payload
-
-
+let buffer_to_string payload = Cstruct.of_bigarray payload |> Cstruct.to_string
+let buffer_of_string string = Cstruct.of_string string |> Cstruct.to_bigarray
+let pp_options = Format.pp_print_list ~pp_sep:Format.pp_print_space Option.pp
+let version self = Header.version self.header
+let kind self = Header.kind self.header
+let code self = Header.code self.header
+let id self = Header.id self.header
+let token self = self.token
+let options self = self.options
+let payload self = self.payload
+let client_addr self = self.client_addr
+let with_client_addr client_addr self = { self with client_addr }
+let payload_length self = Bigarray.Array1.dim self.payload
 
 let path self =
   List.fold_left
@@ -562,26 +462,19 @@ let path self =
 let payload_marker = 0xFF
 let header_length = 4
 
-
 let is_confirmable self =
-  match kind self with
-  | Confirmable -> true
-  | _ -> false
-
+  match kind self with Confirmable -> true | _ -> false
 
 let length self =
   let token_length = String.length self.token in
   let payload_length = Bigarray.Array1.dim self.payload in
   let payload_length =
-    if payload_length <> 0 then payload_length + 1
-    else payload_length in
+    if payload_length <> 0 then payload_length + 1 else payload_length
+  in
   let options_length =
-    List.fold_left
-      (fun r option -> r + Option.length option) 0
-      self.options
+    List.fold_left (fun r option -> r + Option.length option) 0 self.options
   in
   header_length + token_length + options_length + payload_length
-
 
 (* Message decoding *)
 
@@ -590,44 +483,50 @@ let decode buffer =
   let header = Cstruct.BE.get_uint32 data 0 in
 
   let token_length = Header.token_length header in
-  if token_length > 8 then Error `Invalid_token_length else
+  if token_length > 8 then Error `Invalid_token_length
+  else
     let token = Cstruct.sub data header_length token_length in
     let token = Cstruct.to_string token in
 
     let rec decode_options i prev_delta options =
-      if i >= Cstruct.length data then Ok (List.rev options, i) else
-      let byte0 = Cstruct.get_uint8 data i in
-      let i = i + 1 in
-      if byte0 = payload_marker then Ok (List.rev options, i) else
-      let* delta, i =
-        match byte0 lsr 4 with
-        | 13 -> Ok (Cstruct.get_uint8 data i + 13, i + 1)
-        | 14 -> Ok (Cstruct.BE.get_uint16 data i + 269, i + 2)
-        | 15 -> Error `Invalid_option_delta
-        | other -> Ok (other, i) in
-      let number = delta + prev_delta in
-      let* length, i =
-        match byte0 land 0xF with
-        | 13 -> Ok (Cstruct.get_uint8 data i + 13, i + 1)
-        | 14 -> Ok (Cstruct.BE.get_uint16 data i + 269, i + 2)
-        | 15 -> Error `Invalid_option_length
-        | other -> Ok (other, i) in
-      let value = Cstruct.sub data i length in
-      let i = i + length in
-      try
-        let option = Option.decode number value length in
-        decode_options i number (option :: options)
-      with exn ->
-        Format.eprintf "[ERROR] Coap_message: exn = %s@." (Printexc.to_string exn);
-        Format.eprintf "[ERROR] Coap_message: Ignoring invalid CoAP option %d...@." number;
-        decode_options i number options
+      if i >= Cstruct.length data then Ok (List.rev options, i)
+      else
+        let byte0 = Cstruct.get_uint8 data i in
+        let i = i + 1 in
+        if byte0 = payload_marker then Ok (List.rev options, i)
+        else
+          let* delta, i =
+            match byte0 lsr 4 with
+            | 13 -> Ok (Cstruct.get_uint8 data i + 13, i + 1)
+            | 14 -> Ok (Cstruct.BE.get_uint16 data i + 269, i + 2)
+            | 15 -> Error `Invalid_option_delta
+            | other -> Ok (other, i)
+          in
+          let number = delta + prev_delta in
+          let* length, i =
+            match byte0 land 0xF with
+            | 13 -> Ok (Cstruct.get_uint8 data i + 13, i + 1)
+            | 14 -> Ok (Cstruct.BE.get_uint16 data i + 269, i + 2)
+            | 15 -> Error `Invalid_option_length
+            | other -> Ok (other, i)
+          in
+          let value = Cstruct.sub data i length in
+          let i = i + length in
+          try
+            let option = Option.decode number value length in
+            decode_options i number (option :: options)
+          with exn ->
+            Format.eprintf "[ERROR] Coap_message: exn = %s@."
+              (Printexc.to_string exn);
+            Format.eprintf
+              "[ERROR] Coap_message: Ignoring invalid CoAP option %d...@."
+              number;
+            decode_options i number options
     in
     let* options, i = decode_options (4 + token_length) 0 [] in
     let payload = Cstruct.sub data i (Cstruct.length data - i) in
     let payload = Cstruct.to_bigarray payload in
     return { header; token; options; payload; client_addr = None }
-
-
 
 (* Message encoding *)
 
@@ -635,29 +534,23 @@ let encode_header data i header =
   Cstruct.BE.set_uint32 data i header;
   i + header_length
 
-
 let encode_token data i token =
   let token_length = String.length token in
-  if token_length > 0 then begin
+  if token_length > 0 then (
     Cstruct.blit_from_string token 0 data i token_length;
-    i + token_length
-  end else i
+    i + token_length)
+  else i
 
-
-let encode_option_part x =
-  if x > 268 then 14 else
-  if x > 12  then 13 else
-  x
-
+let encode_option_part x = if x > 268 then 14 else if x > 12 then 13 else x
 
 let put_option_part ~data ~i ~length value =
-  if length = 13 then
-    (Cstruct.set_uint8 data i (value - 13); i + 1)
-  else
-  if length = 14 then
-    (Cstruct.BE.set_uint16 data i (value - 269); i + 2) else
-  i
-
+  if length = 13 then (
+    Cstruct.set_uint8 data i (value - 13);
+    i + 1)
+  else if length = 14 then (
+    Cstruct.BE.set_uint16 data i (value - 269);
+    i + 2)
+  else i
 
 let encode_options data i options =
   let rec loop i prev_number options =
@@ -685,17 +578,15 @@ let encode_options data i options =
   in
   loop i 0 (List.sort Option.compare options)
 
-
 let encode_payload data i payload =
   let payload_length = Bigarray.Array1.dim payload in
-  if payload_length > 0 then begin
+  if payload_length > 0 then (
     Cstruct.set_char data i (Char.chr payload_marker);
     let i = i + 1 in
     let payload = Cstruct.of_bigarray payload in
     Cstruct.blit payload 0 data i payload_length;
-    i + payload_length
-  end else i
-
+    i + payload_length)
+  else i
 
 let encode self =
   let data = Cstruct.create (length self) in
@@ -706,42 +597,25 @@ let encode self =
   let _ = encode_payload data i self.payload in
   Cstruct.to_bigarray data
 
-
-
 let gen_id =
-  let n = ref 0 in fun () -> begin
+  let n = ref 0 in
+  fun () ->
     incr n;
     if !n >= 0xFFFF then n := 0;
     !n
-  end
 
-
-let make
-    ?(version=1) ?(id=gen_id()) ?(token="") ~code ?(kind=Confirmable)
-    ?(options=[]) ?client_addr payload =
+let make ?(version = 1) ?(id = gen_id ()) ?(token = "") ~code
+    ?(kind = Confirmable) ?(options = []) ?client_addr payload =
   let token_length = String.length token in
   let header = Header.make ~version ~id ~token_length ~kind ~code in
   { header; token; options; payload; client_addr }
 
-
-
 let pp f self =
   Format.fprintf f
-    "(@[<2>Coap.Message@ \
-     (version %d)@ \
-     (id %d)@ \
-     (token %S)@ \
-     (kind %a)@ \
-     (code %a)@ \
-     @[<2>(options@ %a@])@ \
-     (payload %S))@]"
-    (version self)
-    (id self)
-    (token self)
-    pp_kind (kind self)
-    pp_code (code self)
-    pp_options (options self)
+    "(@[<2>Coap.Message@ (version %d)@ (id %d)@ (token %S)@ (kind %a)@ (code \
+     %a)@ @[<2>(options@ %a@])@ (payload %S))@]"
+    (version self) (id self) (token self) pp_kind (kind self) pp_code
+    (code self) pp_options (options self)
     (payload self |> buffer_to_string)
 
 let max_size = 1152
-

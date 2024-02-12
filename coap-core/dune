@@ -1,13 +1,5 @@
-
 (library
-  (name Coap_core)
-  (public_name coap-core)
-  (modules
-    Coap_core
-    Coap_message
-    Coap_request
-    Coap_response)
-  (libraries stdint fmt cstruct)
-  (preprocess future_syntax))
-
-
+ (name Coap_core)
+ (public_name coap-core)
+ (modules Coap_core Coap_message Coap_request Coap_response)
+ (libraries stdint fmt cstruct))
