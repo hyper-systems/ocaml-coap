@@ -1,6 +1,1 @@
-
-type t = {
-  message : Coap_message.t;
-  source : string;
-}
-
+type t = { message : Coap_message.t; source : string }
